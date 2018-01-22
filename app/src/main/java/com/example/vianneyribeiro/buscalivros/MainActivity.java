@@ -1,6 +1,7 @@
 package com.example.vianneyribeiro.buscalivros;
 
 
+import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -13,6 +14,7 @@ import android.widget.Toast;
 import org.w3c.dom.Text;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,38 +32,49 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         //Initializing all Variable and views.
-        editText = (EditText) findViewById(R.id.search_text);
-        button = (Button) findViewById(R.id.search_button);
-        listView = (ListView) findViewById(R.id.list);
+        editText = findViewById(R.id.search_text);
+        button = findViewById(R.id.search_button);
+        listView = findViewById(R.id.list);
         books = new ArrayList<Book>();
         adapter = new BookAdapter(this, books);
-        defaultTextView = (TextView) findViewById(R.id.default_text_view);
+        defaultTextView = findViewById(R.id.default_text_view);
+        final Context context = MainActivity.this;
 
         //Set button click
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String url = createStringUrl();
-                if (url != "") {
-                    bookAsynctask = new BookAsyncTask(new AsyncResponse() {
-                        @Override
-                        public void processFinish(ArrayList<String> title, ArrayList<String> author) {
-                            clearBookList();
-                            if (title.size() != 0) {
-                                defaultTextView.setVisibility(View.GONE);
-                                listView.setVisibility(View.VISIBLE);
-                                for (int i = 0; i < title.size(); i++) {
-                                    addBook(title.get(i), author.get(i));
+
+                if (NetworkUtil.isNetworkConnected(context)) {
+
+                    String url = createStringUrl();
+                    if (!url.equals("")) {
+                        bookAsynctask = new BookAsyncTask(new AsyncResponse() {
+                            @Override
+                            public void processFinish(ArrayList<String> title, ArrayList<String> author) {
+                                clearBookList();
+                                if (title.size() != 0) {
+                                    defaultTextView.setVisibility(View.GONE);
+                                    listView.setVisibility(View.VISIBLE);
+                                    for (int i = 0; i < title.size(); i++) {
+                                        addBook(title.get(i), author.get(i));
+                                    }
+                                } else {
+                                    listView.setVisibility(View.GONE);
+                                    defaultTextView.setVisibility(View.VISIBLE);
                                 }
-                            } else {
-                                listView.setVisibility(View.GONE);
-                                defaultTextView.setVisibility(View.VISIBLE);
+                                listView.setAdapter(adapter);
                             }
-                            listView.setAdapter(adapter);
-                        }
-                    });
-                    bookAsynctask.execute(url);
+                        });
+                        bookAsynctask.execute(url);
+                    }
+
+                } else {
+
+                    Toast.makeText(context, "Você está sem conexão com a internet", Toast.LENGTH_SHORT).show();
+
                 }
+
             }
         });
 
